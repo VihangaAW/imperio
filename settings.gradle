@@ -8,4 +8,4 @@
  */
 
 rootProject.name = 'Imperio'
-include('lib')
+include('imperio')
