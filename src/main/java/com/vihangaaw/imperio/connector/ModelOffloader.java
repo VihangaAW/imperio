@@ -1,17 +1,25 @@
 package com.vihangaaw.imperio.connector;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Date;
 
 public class ModelOffloader extends AsyncTask<String,Void,Void> {
     private Socket s;
@@ -54,12 +62,31 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         this.modelName = modelName;
     }
 
-    public void sendFile(String file, AssetManager assetManager) throws IOException {
+    public void sendFile(String file, AssetManager assetManager) throws IOException, JSONException {
         DataOutputStream dos = new DataOutputStream(s.getOutputStream());
         System.out.println("Start sending file inside method 1");
+//        get last modified date of tflite file
+        File fileData = new File(file);
+        Date lastModDate = new Date(fileData.lastModified());
+
         AssetFileDescriptor fileDescriptor = assetManager.openFd(file);
         FileInputStream fis = fileDescriptor.createInputStream();
         //FileInputStream fis = new FileInputStream(file);
+        //Send Device Name
+        //Send model modified date
+        OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8);
+        JSONObject obj = new JSONObject();
+        obj.put("ApplicationName",getApplicationName(context));
+        obj.put("Device", Build.MODEL);
+        obj.put("Model",file);
+        //Need to get Last modified date, following on doesnt work
+        obj.put("ModelModifiedDate",lastModDate);
+
+        out.write(obj.toString());
+        System.out.println("Data has been sent");
+        out.flush();
+
+        // Send Model File
         System.out.println("Start sending file inside method 2");
         byte[] buffer = new byte[1024];
         while ((fis.read(buffer) > 0)) {
@@ -86,5 +113,10 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         return false;
     }
 
+    public static String getApplicationName(Context context) {
+        ApplicationInfo applicationInfo = context.getApplicationInfo();
+        int stringId = applicationInfo.labelRes;
+        return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+    }
 
 }
