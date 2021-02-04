@@ -70,8 +70,8 @@ public class TokenizedInputOffload implements InputOffload{
         Instant rEnd = Instant.now();
         Duration rTimeElapsed = Duration.between(rStart, rEnd);
         System.out.println(rTimeElapsed.toMillis() +" milliseconds");
-        System.out.println("result: " + result);
-        System.out.println(result.toString());
+//        System.out.println("result: " + result);
+//        System.out.println(result.toString());
     }
 
     public static JSONArray convertToJSON(int[][] input){
