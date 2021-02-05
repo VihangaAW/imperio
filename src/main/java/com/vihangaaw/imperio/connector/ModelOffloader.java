@@ -11,10 +11,12 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -64,6 +66,9 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
 
     public void sendFile(String file, AssetManager assetManager) throws IOException, JSONException {
         DataOutputStream dos = new DataOutputStream(s.getOutputStream());
+        //newly added
+        BufferedReader reader = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        //newly added
         System.out.println("Start sending file inside method 1");
 //        get last modified date of tflite file
         File fileData = new File(file);
@@ -86,12 +91,24 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         System.out.println("Data has been sent");
         out.flush();
 
-        // Send Model File
-        System.out.println("Start sending file inside method 2");
-        byte[] buffer = new byte[1024];
-        while ((fis.read(buffer) > 0)) {
-            dos.write(buffer);
+        //get response
+        String responseMessage = reader.readLine();
+        System.out.println("GOT RESPONSE  "+responseMessage);
+
+        if(!responseMessage.equals("FILE_EXISTS")){
+            // Send Model File
+            System.out.println("Start sending file inside method 2");
+            byte[] buffer = new byte[1024];
+            while ((fis.read(buffer) > 0)) {
+                dos.write(buffer);
+            }
         }
+//        // Send Model File
+//        System.out.println("Start sending file inside method 2");
+//        byte[] buffer = new byte[1024];
+//        while ((fis.read(buffer) > 0)) {
+//            dos.write(buffer);
+//        }
         fis.close();
         dos.close();
     }

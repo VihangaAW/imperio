@@ -9,6 +9,11 @@ public class InvokeNetworkSurrogateProfiler{
     private double ramUsage;
     private double batteryUsage;
     private String pluggedInStatus;
+    private String surrogateIpAddress;
+
+    public InvokeNetworkSurrogateProfiler(String surrogateIpAddress) {
+        this.surrogateIpAddress = surrogateIpAddress;
+    }
 
     public double getCpuUsage() {
         return cpuUsage;
@@ -33,7 +38,7 @@ public class InvokeNetworkSurrogateProfiler{
                 try {
                     Thread.sleep(1000);
                     JSONObject objectDecisionMakingData = new JSONObject();
-                    NetworkSurrogateProfiler.offload("192.168.1.8",1237);
+                    NetworkSurrogateProfiler.offload(surrogateIpAddress,1237);
                     System.out.println("OUT SIDE IMPERIO");
                     System.out.println(NetworkSurrogateProfiler.receivedDataJSON);
                     cpuUsage = NetworkSurrogateProfiler.receivedDataJSON.getDouble("CpuUsage");
