@@ -30,11 +30,7 @@ public class InvokeConnector {
 
 
     public void start(){
-        System.out.println("Invoked start");
         invokeReceiveBroadcast();
-        System.out.println("After Invoked start");
-
-//        surrogateIpAddress = "192.168.1.8";
         //Execute model offloader
         System.out.println("IP Address of the surrogate device: "+surrogateIpAddress);
         ModelOffloader oe = new ModelOffloader(surrogateIpAddress, 1231, context, modelPath);
