@@ -31,25 +31,11 @@ public class InvokeNetworkSurrogateProfiler{
         return pluggedInStatus;
     }
 
-    public void run(){
+    public void run() throws Exception {
         System.out.println("InvokeNetworkSurrogateProfiler is running");
-        while (true){
-            if(NetworkSurrogateProfiler.receivedData==1){
-                try {
-                    Thread.sleep(1000);
-                    JSONObject objectDecisionMakingData = new JSONObject();
-                    NetworkSurrogateProfiler.offload(surrogateIpAddress,1237);
-                    System.out.println("OUT SIDE IMPERIO");
-                    System.out.println(NetworkSurrogateProfiler.receivedDataJSON);
-                    cpuUsage = NetworkSurrogateProfiler.receivedDataJSON.getDouble("CpuUsage");
-                    ramUsage = NetworkSurrogateProfiler.receivedDataJSON.getDouble("RamUsage");
-                    batteryUsage = NetworkSurrogateProfiler.receivedDataJSON.getDouble("BatteryUsage");
-                    pluggedInStatus = NetworkSurrogateProfiler.receivedDataJSON.getString("PluggedInStatus");
-                } catch (InterruptedException | JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+            JSONObject objectDecisionMakingData = new JSONObject();
+            NetworkSurrogateProfiler.offload(surrogateIpAddress,1237);
+            System.out.println("OUT SIDE IMPERIO");
 
     }
 
