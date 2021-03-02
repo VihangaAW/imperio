@@ -92,15 +92,26 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         out.flush();
 
         //get response
+        int  character;
+        StringBuilder data = new StringBuilder();
+        while((character = reader.read()) != -1 && character != '\n')
+        {
+            data.append((char) character);
+//                    System.out.println("CHARACTER: "+(char) character);
+        }
+        System.out.println(data);
 //        String responseMessage = reader.readLine();
 //        System.out.println("GOT RESPONSE  "+responseMessage);
 
 //        if(!responseMessage.equals("FILE_EXISTS")){
             // Send Model File
             System.out.println("Start sending file inside method 2");
-            byte[] buffer = new byte[1024];
-            while ((fis.read(buffer) > 0)) {
-                dos.write(buffer);
+            System.out.println("ANSWER: "+data.toString().equals("MODEL_DOES_NOT_EXIST"));
+            if(data.toString().equals("MODEL_DOES_NOT_EXIST")) {
+                byte[] buffer = new byte[1024];
+                while ((fis.read(buffer) > 0)) {
+                    dos.write(buffer);
+                }
             }
 //        }
 //        // Send Model File
