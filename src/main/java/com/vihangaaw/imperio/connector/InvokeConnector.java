@@ -9,9 +9,14 @@ public class InvokeConnector {
     private String surrogateIpAddress;
     private Context context;
     private String modelPath;
+    private Boolean isOffloadEnabled;
 
     public String getSurrogateIpAddress() {
         return surrogateIpAddress;
+    }
+
+    public Boolean getOffloadEnabled() {
+        return isOffloadEnabled;
     }
 
     public InvokeConnector(Context context, String modelPath) {
@@ -25,33 +30,34 @@ public class InvokeConnector {
         ReceiveBroadcast rb = new ReceiveBroadcast(context);
         rb.run();
         surrogateIpAddress = rb.getSurrogateIpAddress();
-
+        isOffloadEnabled  = rb.getOffloadEnabled();
     }
 
 
     public void start(){
         invokeReceiveBroadcast();
-        //Execute model offloader
-        System.out.println("IP Address of the surrogate device: "+surrogateIpAddress);
-        ModelOffloader oe = new ModelOffloader(surrogateIpAddress, 1231, context, modelPath);
-        oe.execute();
-        Log.d("OFFLOAD","===========================offload executed");
+        if(isOffloadEnabled) {
+            //Execute model offloader
+            System.out.println("IP Address of the surrogate device: " + surrogateIpAddress);
+            ModelOffloader oe = new ModelOffloader(surrogateIpAddress, 1231, context, modelPath);
+            oe.execute();
+            Log.d("OFFLOAD", "===========================offload executed");
 
-        //Execute decision making process data information
-        Thread thread = new Thread(new Runnable() {
+            //Execute decision making process data information
+            Thread thread = new Thread(new Runnable() {
 
-            @Override
-            public void run() {
-                try  {
-                    InvokeNetworkSurrogateProfiler invokeNetworkSurrogateProfiler = new InvokeNetworkSurrogateProfiler(surrogateIpAddress);
-                    invokeNetworkSurrogateProfiler.run();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                @Override
+                public void run() {
+                    try {
+                        InvokeNetworkSurrogateProfiler invokeNetworkSurrogateProfiler = new InvokeNetworkSurrogateProfiler(surrogateIpAddress);
+                        invokeNetworkSurrogateProfiler.run();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        });
-        thread.start();
-
+            });
+            thread.start();
+        }
     }
 
 }
