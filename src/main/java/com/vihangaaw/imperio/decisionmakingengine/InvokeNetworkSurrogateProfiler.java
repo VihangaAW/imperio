@@ -35,8 +35,6 @@ public class InvokeNetworkSurrogateProfiler{
         System.out.println("InvokeNetworkSurrogateProfiler is running");
             JSONObject objectDecisionMakingData = new JSONObject();
             NetworkSurrogateProfiler.offload(surrogateIpAddress,1237);
-            System.out.println("OUT SIDE IMPERIO");
-
     }
 
 }

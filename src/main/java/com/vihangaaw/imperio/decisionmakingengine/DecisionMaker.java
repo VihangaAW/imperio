@@ -88,19 +88,16 @@ public class DecisionMaker {
             lowMemory = true;
             return true;
             //set to false in order to offload everytime. Original value is true
-//            lowMemory = false;
-//            return false;
-
+            //lowMemory = false;
+            //return false;
         }
         else {
             lowMemory = false;
             return false;
             //set to false in order to offload everytime. Original value is false
-//            lowMemory = true;
-//            return true;
-
+            //lowMemory = true;
+            //return true;
         }
-
     }
 
 

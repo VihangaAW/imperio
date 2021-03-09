@@ -20,7 +20,6 @@ public class InvokeConnector {
     }
 
     public InvokeConnector(Context context, String modelPath) {
-//        this.surrogateIpAddress = surrogateIpAddress;
         this.context = context;
         this.modelPath = modelPath;
     }

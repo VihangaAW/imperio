@@ -52,24 +52,22 @@ public class NetworkSurrogateProfiler {
             StringBuilder data = new StringBuilder();
 
             while(true){
-//                Thread.sleep(100);
+                // Thread.sleep(100);
                 String strJson = "{'message':'Hello World from Pixel 3'}";
                 JSONObject jsonObj = new JSONObject(strJson);
                 System.out.println(jsonObj);
-                //Calculate time
+                // Calculate time
                 Instant rStart = Instant.now();
                 writer.println(jsonObj.toString());
                 while((character = reader.read()) != -1 && character != '\n')
                 {
                     data.append((char) character);
-//                    System.out.println("CHARACTER: "+(char) character);
                 }
                 //Calculate time
                 Instant rEnd = Instant.now();
                 Duration rTimeElapsed = Duration.between(rStart, rEnd);
                 roundTripTime = rTimeElapsed.toMillis();
                 System.out.println(data);
-                //debug
                 if(data.length()>0){
                     JSONObject receivedJson = new JSONObject(data.toString());
                     currentCpuUsage = receivedJson.getDouble("CpuUsage");
@@ -77,11 +75,7 @@ public class NetworkSurrogateProfiler {
                     availableBattery = receivedJson.getDouble("BatteryUsage");
                     batteryStatus = receivedJson.getString("PluggedInStatus");
                 }
-               //debug
-
-                //debug
                 data = new StringBuilder();
-                //debug
             }
         } catch (UnknownHostException ex) {
             System.out.println("Server not found: " + ex.getMessage());

@@ -34,17 +34,6 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         try {
             s = new Socket(host, port);
             AssetManager assetManager = context.getAssets();
-            //Get file list on assets folder
-            //String[] files = null;
-            //System.out.println("ModelOffloader: ExecuteTransfer starts");
-            //try {
-            //    files = assetManager.list("");
-            //    Log.d("AAA", Arrays.toString(files));
-            //    System.out.println("ModelOffloader: files found in asset folder");
-            //} catch (IOException e) {
-            //    Log.e("MODELOFFLOAD", "Failed to get asset file list.", e);
-            //}
-            System.out.println("ModelOffloader: send files");
             sendFile(modelName,  assetManager);
             s.close();
             //return 0 : model successfully offloaded
@@ -66,11 +55,9 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
 
     public void sendFile(String file, AssetManager assetManager) throws IOException, JSONException {
         DataOutputStream dos = new DataOutputStream(s.getOutputStream());
-        //newly added
         BufferedReader reader = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        //newly added
         System.out.println("Start sending file inside method 1");
-//        get last modified date of tflite file
+        // Get last modified date of tflite file
         File fileData = new File(file);
         Date lastModDate = new Date(fileData.lastModified());
 
@@ -91,35 +78,21 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         System.out.println("Data has been sent");
         out.flush();
 
-        //get response
+        // Get the response from the surrogate device
+        // Response contains whether the model is exists or not in the surrogate device
         int  character;
         StringBuilder data = new StringBuilder();
         while((character = reader.read()) != -1 && character != '\n')
         {
             data.append((char) character);
-//                    System.out.println("CHARACTER: "+(char) character);
         }
-        System.out.println(data);
-//        String responseMessage = reader.readLine();
-//        System.out.println("GOT RESPONSE  "+responseMessage);
-
-//        if(!responseMessage.equals("FILE_EXISTS")){
-            // Send Model File
-            System.out.println("Start sending file inside method 2");
-            System.out.println("ANSWER: "+data.toString().equals("MODEL_DOES_NOT_EXIST"));
-            if(data.toString().equals("MODEL_DOES_NOT_EXIST")) {
-                byte[] buffer = new byte[1024];
-                while ((fis.read(buffer) > 0)) {
-                    dos.write(buffer);
-                }
+        // Send Model File
+        if(data.toString().equals("MODEL_DOES_NOT_EXIST")) {
+            byte[] buffer = new byte[1024];
+            while ((fis.read(buffer) > 0)) {
+                dos.write(buffer);
             }
-//        }
-//        // Send Model File
-//        System.out.println("Start sending file inside method 2");
-//        byte[] buffer = new byte[1024];
-//        while ((fis.read(buffer) > 0)) {
-//            dos.write(buffer);
-//        }
+        }
         fis.close();
         dos.close();
     }
