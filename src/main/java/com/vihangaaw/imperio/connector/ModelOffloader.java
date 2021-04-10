@@ -28,6 +28,7 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
     private String host="";
     private int port;
     private Context context;
+    private String inferenceApi;
     private String modelName ="";
 
     private int ExecuteTranfer() {
@@ -46,11 +47,12 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         }
     }
 
-    public ModelOffloader(String host, int port, Context context, String modelName) {
+    public ModelOffloader(String host, int port, Context context, String modelName, String inferenceApi) {
         this.host = host;
         this.port = port;
         this.context = context;
         this.modelName = modelName;
+        this.inferenceApi = inferenceApi;
     }
 
     public void sendFile(String file, AssetManager assetManager) throws IOException, JSONException {
@@ -73,6 +75,8 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         obj.put("Model",file);
         //Need to get Last modified date, following on doesnt work
         obj.put("ModelModifiedDate",lastModDate);
+        obj.put("InferenceApi",inferenceApi);
+
 
         out.write(obj.toString());
         System.out.println("Data has been sent");
@@ -86,13 +90,25 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         {
             data.append((char) character);
         }
-        // Send Model File
-        if(data.toString().equals("MODEL_DOES_NOT_EXIST")) {
-            byte[] buffer = new byte[1024];
-            while ((fis.read(buffer) > 0)) {
-                dos.write(buffer);
-            }
+        System.out.println(data);
+
+        if(data.toString().equals("INFERENCE_API_NOT_FOUND")) {
+            System.out.println("INFERENCE_API_NOT_FOUND");
         }
+
+        data = new StringBuilder();
+        while((character = reader.read()) != -1 && character != '\n')
+        {
+            data.append((char) character);
+        }
+        System.out.println(data);
+            // Send Model File
+            if(data.toString().equals("MODEL_DOES_NOT_EXIST")) {
+                byte[] buffer = new byte[1024];
+                while ((fis.read(buffer) > 0)) {
+                    dos.write(buffer);
+                }
+            }
         fis.close();
         dos.close();
     }

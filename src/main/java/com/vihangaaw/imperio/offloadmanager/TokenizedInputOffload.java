@@ -9,6 +9,7 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,7 +26,30 @@ public class TokenizedInputOffload implements InputOffload{
     private static long timeElapsed;
 
 
-    private static ImperioSQLiteDBHelper imperioSQLiteDBHelper;
+    private volatile static Socket oneSocket;
+
+    private volatile static InputStream oneInput;
+    private volatile static InputStreamReader oneReader;
+
+    private volatile static OutputStream oneOutput;
+    private volatile static PrintWriter oneWriter;
+
+
+
+
+        private static ImperioSQLiteDBHelper imperioSQLiteDBHelper;
+
+    public TokenizedInputOffload() throws IOException {
+
+    }
+
+ public static void startOne(String surrogateIpAddress) throws IOException {
+        oneSocket = new Socket(surrogateIpAddress, 1238);
+        oneInput = oneSocket.getInputStream();
+        oneReader = new InputStreamReader(oneInput);
+        oneOutput = oneSocket.getOutputStream();
+        oneWriter = new PrintWriter(oneOutput, true);
+    }
 
     public static boolean isTaskHasErrors() {
         return taskHasErrors;
@@ -39,46 +63,49 @@ public class TokenizedInputOffload implements InputOffload{
         return timeElapsed;
     }
 
-    public static void offload(String input, float[][] output, String[] outputTypes, String surrogateAddress, int surrogatePort, long offloadTimeExetute){
-        //clear data
-        taskTimeOut = false;
-        taskHasErrors = false;
-        timeElapsed = 0;
 
+
+    // Only use this method
+    public static void offload(Instant startTime, String input, float[][] output) throws Exception{
         Callable<Integer> task = () -> {
             try {
-                try (
-                        Socket s = new Socket(surrogateAddress, surrogatePort);
-                        PrintWriter pw = new PrintWriter(s.getOutputStream());
-                        OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8);
-                        InputStreamReader streamReader = new InputStreamReader(s.getInputStream());
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(s.getInputStream()));
-                ) {
-                    out.write(input);
-                    out.flush();
-                    //read the server response message
-                    //Get the response message and print it to console
-                    String responseMessage = reader.readLine();
-                    JSONObject object = new JSONObject(responseMessage);
-                    output[0][0] = Float.parseFloat(object.getString("Negative"));
-                    output[0][1] = Float.parseFloat(object.getString("Positive"));
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                int  character;
+                StringBuilder data = new StringBuilder();
+
+                //Calculate time
+                Instant rStart = Instant.now();
+                oneWriter.println(input);
+                while((character = oneReader.read()) != -1 && character != '\n')
+                {
+                    data.append((char) character);
                 }
-                return null;
+                //Calculate time
+                Instant rEnd = Instant.now();
+
+                if(data.length()>0){
+                    JSONObject receivedJson = new JSONObject(data.toString());
+                    output[0][0] = Float.parseFloat(receivedJson.getString("negative"));
+                    output[0][1] = Float.parseFloat(receivedJson.getString("positive"));
+                }
+
             }
             catch (Exception e) {
                 e.printStackTrace(); //throw new IllegalStateException("task interrupted", e);
             }
             return 0;
         };
+
+
         //Creates a threadpool
         ExecutorService executor = Executors.newFixedThreadPool(1);
+
         Future<Integer> future = executor.submit(task);
+
         System.out.println("future done? " + future.isDone());
+
         Integer result = 0;
         try {
-            result = future.get(1000, TimeUnit.MILLISECONDS);
+            result = future.get(5000, TimeUnit.MILLISECONDS);
         }
         catch (TimeoutException e) {
             System.out.println("DECISION MAKING ENGINE: TIME OUT");
@@ -91,18 +118,13 @@ public class TokenizedInputOffload implements InputOffload{
             e.printStackTrace();
         }
         System.out.println("future done? " + future.isDone());
-        System.out.println("OUTPUT OF WITHOUT GET: "+ output[0][0] + "    " + output[0][1]);
+
+
     }
 
-    public static JSONArray convertToJSON(int[][] input){
-        JSONArray convertedInputJson = new JSONArray();
-        for(int[] value_i : input)
-        {
-            for(int value_j : value_i)
-            {
-                convertedInputJson.put(value_j);
-            }
-        }
-        return convertedInputJson;
-    }
+
+
+
+
+
 }
