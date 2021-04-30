@@ -31,10 +31,26 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
     private String inferenceApi;
     private String modelName ="";
 
-    private int ExecuteTranfer() {
+    /**
+     * Invokes sendFile()
+     *
+     * @return int Returns -1 if the model offloading process failed
+     */
+    private int executeTranfer() {
         try {
             s = new Socket(host, port);
             AssetManager assetManager = context.getAssets();
+            //Get file list on assets folder
+            //String[] files = null;
+            //System.out.println("ModelOffloader: ExecuteTransfer starts");
+            //try {
+            //    files = assetManager.list("");
+            //    Log.d("FILES", Arrays.toString(files));
+            //    System.out.println("ModelOffloader: files found in asset folder");
+            //} catch (IOException e) {
+            //    Log.e("MODELOFFLOAD", "Failed to get asset file list.", e);
+            //}
+            System.out.println("ModelOffloader: send files");
             sendFile(modelName,  assetManager);
             s.close();
             //return 0 : model successfully offloaded
@@ -42,7 +58,7 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         } catch (Exception e) {
             Log.d("MODELOFFLOAD", "Model transfer failed");
             e.printStackTrace();
-            //return 0 : model offloaded failed
+            //return -1 : model offloaded failed
             return -1;
         }
     }
@@ -55,11 +71,16 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         this.inferenceApi = inferenceApi;
     }
 
+    /**
+     * Check model exists on the surrogate device, if not found offloads the file
+     * Sends ApplicationName, Device Name, Model name and InferenceApi name
+     *
+     * @return void
+     */
     public void sendFile(String file, AssetManager assetManager) throws IOException, JSONException {
         DataOutputStream dos = new DataOutputStream(s.getOutputStream());
         BufferedReader reader = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        System.out.println("Start sending file inside method 1");
-        // Get last modified date of tflite file
+//        get last modified date of tflite file
         File fileData = new File(file);
         Date lastModDate = new Date(fileData.lastModified());
 
@@ -82,8 +103,7 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         System.out.println("Data has been sent");
         out.flush();
 
-        // Get the response from the surrogate device
-        // Response contains whether the model is exists or not in the surrogate device
+        //get response
         int  character;
         StringBuilder data = new StringBuilder();
         while((character = reader.read()) != -1 && character != '\n')
@@ -96,13 +116,16 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
             System.out.println("INFERENCE_API_NOT_FOUND");
         }
 
+        //get response
         data = new StringBuilder();
         while((character = reader.read()) != -1 && character != '\n')
         {
             data.append((char) character);
         }
         System.out.println(data);
+
             // Send Model File
+            System.out.println("ANSWER: "+data.toString().equals("MODEL_DOES_NOT_EXIST"));
             if(data.toString().equals("MODEL_DOES_NOT_EXIST")) {
                 byte[] buffer = new byte[1024];
                 while ((fis.read(buffer) > 0)) {
@@ -116,10 +139,16 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
     @Override
     protected Void doInBackground(String... voids) {
         System.out.println("ModelOffloader: doInBackground starts");
-        int offload = ExecuteTranfer();
+        int offload = executeTranfer();
         return null;
     }
 
+    /**
+     * Returns true if the user has enabled the offload functionality on Surrogate Manager
+     * mobile application, else false
+     *
+     * @return boolean   returns the status of offload functionality
+     */
     //exists method is used to check whether a file is exists in Assets folder
     public static boolean exists(AssetManager assetManager,
                                  String directory, String fileName) throws IOException {
@@ -130,6 +159,11 @@ public class ModelOffloader extends AsyncTask<String,Void,Void> {
         return false;
     }
 
+    /**
+     * Returns the name of the current application
+     *
+     * @return String   returns the name of the current application
+     */
     public static String getApplicationName(Context context) {
         ApplicationInfo applicationInfo = context.getApplicationInfo();
         int stringId = applicationInfo.labelRes;

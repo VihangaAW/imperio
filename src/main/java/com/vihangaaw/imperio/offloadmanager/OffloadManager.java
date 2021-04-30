@@ -1,5 +1,4 @@
 package com.vihangaaw.imperio.offloadmanager;
-import android.content.Context;
 
 import com.vihangaaw.imperio.decisionmakingengine.historicaldatadb.ImperioSQLiteDBHelper;
 
@@ -9,7 +8,6 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -20,36 +18,44 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class TokenizedInputOffload implements InputOffload{
+public class OffloadManager {
     private static boolean taskTimeOut = false;
     private static boolean taskHasErrors = false;
     private static long timeElapsed;
 
 
-    private volatile static Socket oneSocket;
+    private volatile static Socket socket;
 
-    private volatile static InputStream oneInput;
-    private volatile static InputStreamReader oneReader;
+    private volatile static InputStream inputStream;
+    private volatile static InputStreamReader inputStreamReader;
 
-    private volatile static OutputStream oneOutput;
-    private volatile static PrintWriter oneWriter;
-
-
+    private volatile static OutputStream outputStream;
+    private volatile static PrintWriter printWriter;
 
 
-        private static ImperioSQLiteDBHelper imperioSQLiteDBHelper;
 
-    public TokenizedInputOffload() throws IOException {
 
+    private static ImperioSQLiteDBHelper imperioSQLiteDBHelper;
+
+    public OffloadManager() throws IOException {
     }
 
- public static void startOne(String surrogateIpAddress) throws IOException {
-        oneSocket = new Socket(surrogateIpAddress, 1238);
-        oneInput = oneSocket.getInputStream();
-        oneReader = new InputStreamReader(oneInput);
-        oneOutput = oneSocket.getOutputStream();
-        oneWriter = new PrintWriter(oneOutput, true);
+    /**
+     * Starts Task Offloading Manager
+     *
+     * @param  surrogateIpAddress  String Surrogate IP Address
+     * @param  taskExecutorPort  int Port reserved for Task Offloading Manager
+     *
+     * @return void
+     */
+    public static void start(String surrogateIpAddress, int taskExecutorPort) throws IOException {
+        socket = new Socket(surrogateIpAddress, taskExecutorPort);
+        inputStream = socket.getInputStream();
+        inputStreamReader = new InputStreamReader(inputStream);
+        outputStream = socket.getOutputStream();
+        printWriter = new PrintWriter(outputStream, true);
     }
+
 
     public static boolean isTaskHasErrors() {
         return taskHasErrors;
@@ -64,28 +70,30 @@ public class TokenizedInputOffload implements InputOffload{
     }
 
 
-
-    // Only use this method
-    public static void offload(Instant startTime, String input, float[][] output) throws Exception{
+    /**
+     * Offload machine learning task and get the output
+     *
+     * @param  timeoutvalue  long timeout value (local execution value)
+     * @param  input  String input
+     * @return int      returns the status of connectivity
+     */
+    public static JSONObject offload(long timeoutvalue, String input) throws Exception{
+        JSONArray responseJson =  new JSONArray();
         Callable<Integer> task = () -> {
             try {
                 int  character;
                 StringBuilder data = new StringBuilder();
 
-                //Calculate time
-                Instant rStart = Instant.now();
-                oneWriter.println(input);
-                while((character = oneReader.read()) != -1 && character != '\n')
+                printWriter.println(input);
+                while((character = inputStreamReader.read()) != -1 && character != '\n')
                 {
                     data.append((char) character);
                 }
-                //Calculate time
-                Instant rEnd = Instant.now();
 
                 if(data.length()>0){
+                    System.out.println(data.toString());
                     JSONObject receivedJson = new JSONObject(data.toString());
-                    output[0][0] = Float.parseFloat(receivedJson.getString("negative"));
-                    output[0][1] = Float.parseFloat(receivedJson.getString("positive"));
+                    responseJson.put(receivedJson);
                 }
 
             }
@@ -98,14 +106,12 @@ public class TokenizedInputOffload implements InputOffload{
 
         //Creates a threadpool
         ExecutorService executor = Executors.newFixedThreadPool(1);
-
         Future<Integer> future = executor.submit(task);
-
         System.out.println("future done? " + future.isDone());
 
         Integer result = 0;
         try {
-            result = future.get(5000, TimeUnit.MILLISECONDS);
+            result = future.get(timeoutvalue, TimeUnit.MILLISECONDS);
         }
         catch (TimeoutException e) {
             System.out.println("DECISION MAKING ENGINE: TIME OUT");
@@ -118,8 +124,7 @@ public class TokenizedInputOffload implements InputOffload{
             e.printStackTrace();
         }
         System.out.println("future done? " + future.isDone());
-
-
+        return responseJson.getJSONObject(0);
     }
 
 

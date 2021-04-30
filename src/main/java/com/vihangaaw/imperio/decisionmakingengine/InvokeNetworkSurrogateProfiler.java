@@ -10,9 +10,11 @@ public class InvokeNetworkSurrogateProfiler{
     private double batteryUsage;
     private String pluggedInStatus;
     private String surrogateIpAddress;
+    private int surrogateProfilerPort;
 
-    public InvokeNetworkSurrogateProfiler(String surrogateIpAddress) {
+    public InvokeNetworkSurrogateProfiler(String surrogateIpAddress, int surrogateProfilerPort) {
         this.surrogateIpAddress = surrogateIpAddress;
+        this.surrogateProfilerPort = surrogateProfilerPort;
     }
 
     public double getCpuUsage() {
@@ -31,10 +33,15 @@ public class InvokeNetworkSurrogateProfiler{
         return pluggedInStatus;
     }
 
+    /**
+     * Invokes Network and Surrogate Profilers
+     *
+     * @return void
+     */
     public void run() throws Exception {
         System.out.println("InvokeNetworkSurrogateProfiler is running");
-            JSONObject objectDecisionMakingData = new JSONObject();
-            NetworkSurrogateProfiler.offload(surrogateIpAddress,1237);
+        JSONObject objectDecisionMakingData = new JSONObject();
+        NetworkSurrogateProfiler.offload(surrogateIpAddress,surrogateProfilerPort);
     }
 
 }

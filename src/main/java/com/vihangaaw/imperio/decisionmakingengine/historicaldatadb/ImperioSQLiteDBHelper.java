@@ -41,73 +41,12 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
         onCreate(sqLiteDatabase);
     }
 
-    public Boolean insertTaskLocal(String taskId, int averageTimeLocal, int averageTimeOffload)
-    {
-        SQLiteDatabase DB = this.getWritableDatabase();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put("task_id", taskId);
-        contentValues.put("time_local", averageTimeLocal);
-        long result=DB.insert("historical_data_local", null, contentValues);
-        if(result==-1){
-            return false;
-        }else{
-            return true;
-        }
-    }
-
-    public Boolean insertTaskOffload(String taskId, int averageTimeLocal, int averageTimeOffload)
-    {
-        SQLiteDatabase DB = this.getWritableDatabase();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put("task_id", taskId);
-        contentValues.put("time_offload", averageTimeOffload);
-        long result=DB.insert("historical_data_offload", null, contentValues);
-        if(result==-1){
-            return false;
-        }else{
-            return true;
-        }
-    }
-
-
-
-    public Boolean updateTask(String taskId, int averageTimeLocal, int taskExecutedCountLocal, int averageTimeOffload, int taskExecutedCountOffload) {
-        SQLiteDatabase DB = this.getWritableDatabase();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put("average_time_local", averageTimeLocal);
-        contentValues.put("task_executed_count_local", taskExecutedCountLocal);
-        contentValues.put("average_time_offload", averageTimeOffload);
-        contentValues.put("task_executed_count_offload", taskExecutedCountOffload);
-        Cursor cursor = DB.rawQuery("Select * from historical_data where task_id = ?", new String[]{taskId});
-        if (cursor.getCount() > 0) {
-            long result = DB.update("historical_data", contentValues, "task_id=?", new String[]{taskId});
-            if (result == -1) {
-                return false;
-            } else {
-                return true;
-            }
-        } else {
-            return false;
-        }}
-
-
-    public Boolean deleteTask (String taskId)
-    {
-        SQLiteDatabase DB = this.getWritableDatabase();
-        Cursor cursor = DB.rawQuery("Select * from historical_data where task_id = ?", new String[]{taskId});
-        if (cursor.getCount() > 0) {
-            long result = DB.delete("historical_data", "task_id=?", new String[]{taskId});
-            if (result == -1) {
-                return false;
-            } else {
-                return true;
-            }
-        } else {
-            return false;
-        }
-
-    }
-
+    /**
+     * Returns all the records related to local for a given task id
+     *
+     * @param  taskId  String Task ID
+     * @return Cursor
+     */
     public Cursor getTaskLocal (String taskId)
     {
         SQLiteDatabase DB = this.getWritableDatabase();
@@ -116,6 +55,12 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
         return cursor;
     }
 
+    /**
+     * Returns all the records related to offload for a given task id
+     *
+     * @param  taskId  String Task ID
+     * @return Cursor
+     */
     public Cursor getTaskOffload (String taskId)
     {
         SQLiteDatabase DB = this.getWritableDatabase();
@@ -125,7 +70,14 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
     }
 
 
-    //updateAverageTimeLocal
+    /**
+     * Add local execution time
+     *
+     * @param  taskId  String Task ID
+     * @param  timeLocal  long execution time
+     * @param  localMac  double mean absolute deviation of the local execution time
+     * @return boolean      returns true if the insertion was successful
+     */
     public Boolean AddExecutionTimeLocal(String taskId, long timeLocal, double localMac){
         SQLiteDatabase DB = this.getWritableDatabase();
         int executeCount = (getTaskLocal(taskId)).getCount();
@@ -159,7 +111,14 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
     }
 
 
-    //updateAverageTimeOffload
+    /**
+     * Add offload execution time
+     *
+     * @param  taskId  String Task ID
+     * @param  timeOffload  long execution time
+     * @param  offloadMac  double mean absolute deviation of the offload execution time
+     * @return boolean      returns true if the insertion was successful
+     */
     public Boolean AddExecutionTimeOffload(String taskId, long timeOffload, double offloadMac){
         SQLiteDatabase DB = this.getWritableDatabase();
         int executeCount = (getTaskOffload(taskId)).getCount();
@@ -190,7 +149,12 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
         }
     }
 
-
+    /**
+     * Reset al the offload and local execution times in the database
+     *
+     * @param  taskId  String Task ID
+     * @return void
+     */
     public void resetAverageTime(String taskId){
         SQLiteDatabase DB = this.getWritableDatabase();
         long resultLocal = DB.delete("historical_data_local", "task_id=?", new String[]{taskId});
@@ -198,6 +162,12 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
 
     }
 
+    /**
+     * Returns average of the local execution time
+     *
+     * @param  taskId  String Task ID
+     * @return double      returns average of the local execution time
+     */
     public double getLocalAverage(String taskId){
         SQLiteDatabase DB = this.getWritableDatabase();
         String query = "Select time_local from historical_data_local where task_id = ?";
@@ -209,6 +179,12 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
         return avgLocalExecution;
     }
 
+    /**
+     * Returns average of the offload execution time
+     *
+     * @param  taskId  String Task ID
+     * @return double      returns average of the offload execution time
+     */
     public double getOffloadAverage(String taskId){
         SQLiteDatabase DB = this.getWritableDatabase();
         String query = "Select AVG(time_offload) from historical_data_offload where task_id = ?";
@@ -220,7 +196,12 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
         return avgOffloadExecution;
     }
 
-
+    /**
+     * Returns mean absolute deviation of the local execution time
+     *
+     * @param  taskId  String Task ID
+     * @return double      returns mean absolute deviation of the local execution time
+     */
     public double getLocalMad(String taskId){
         SQLiteDatabase DB = this.getWritableDatabase();
         String query = "Select AVG(time_local) from historical_data_local where task_id = ?";
@@ -237,6 +218,12 @@ public class ImperioSQLiteDBHelper extends SQLiteOpenHelper {
         return Double.parseDouble(cursorToMad.getString(0));
     }
 
+    /**
+     * Returns mean absolute deviation of the offload execution time
+     *
+     * @param  taskId  String Task ID
+     * @return double      returns mean absolute deviation of the offload execution time
+     */
     public double getOffloadMad(String taskId){
         SQLiteDatabase DB = this.getWritableDatabase();
         String query = "Select AVG(time_offload) from historical_data_offload where task_id = ?";

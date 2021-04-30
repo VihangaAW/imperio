@@ -20,6 +20,10 @@ public class ReceiveBroadcast{
     private String surrogateMACAddress="";
     private Boolean isOffloadEnabled = false;
     private Context context;
+    private int modelOffloaderPort;
+    private int surrogateProfilerPort;
+    private int taskExecutorPort;
+
 
     public String getSurrogateIpAddress() {
         return surrogateIpAddress;
@@ -37,6 +41,23 @@ public class ReceiveBroadcast{
         this.context = context;
     }
 
+    public int getModelOffloaderPort() {
+        return modelOffloaderPort;
+    }
+
+    public int getSurrogateProfilerPort() {
+        return surrogateProfilerPort;
+    }
+
+    public int getTaskExecutorPort() {
+        return taskExecutorPort;
+    }
+
+    /**
+     * Invokes surrogateDeviceScanner()
+     *
+     * @return void
+     */
     public void run(){
         // code in the other thread, can reference "var" variable
         try{
@@ -47,12 +68,17 @@ public class ReceiveBroadcast{
         }
     }
 
+    /**
+     * Waiting for a message from the surrogate device, if found check whether the
+     * surrogate device is registered. If it is registered, get the IP address from the message
+     *
+     * @return void
+     */
     public void surrogateDeviceScanner() throws SocketException, UnknownHostException, IOException {
         // Get offload enabled status from the offload manager mobile app
-        // Content provider
+        // vihangaaw content provider
         Uri offloadStatusContentUri = Uri.parse("content://com.vihangaaw.imperiooffloadmanager/cp_offload_info");
         ContentProviderClient offloadStatusContentProviderClient = context.getContentResolver().acquireContentProviderClient(offloadStatusContentUri);
-        ContentResolver offloadStatusContentResolver = context.getContentResolver();
 
         Uri connDeviceHistoryContentUri = Uri.parse("content://com.vihangaaw.imperiooffloadmanager/cp_conn_device_history");
         ContentProviderClient connDeviceHistoryContentProviderClient = context.getContentResolver().acquireContentProviderClient(connDeviceHistoryContentUri);
@@ -72,17 +98,12 @@ public class ReceiveBroadcast{
                 String column1Value = offloadStatusCursor.getString(column1Index);
                 if(column1Value.equals("True")){
                     isOffloadEnabled = true;
-                    System.out.println("INSIDE Offload Enabled Status from Offload Manager: "+isOffloadEnabled);
                 }
                 else{
                     isOffloadEnabled = false;
-                    System.out.println("INSIDE Offload Enabled Status from Offload Manager: "+isOffloadEnabled);
                 }
             } while (offloadStatusCursor.moveToNext());
         }
-
-        
-        // Content provider
         if(isOffloadEnabled) {
             try {
                 System.out.println(InetAddress.getByName("255.255.255.255"));
@@ -94,8 +115,9 @@ public class ReceiveBroadcast{
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
 
+                //if(isOffloadEnabled){
                 // Get the registered MAC address of offload manager mobile app
-                // Content provider
+                // vihangaaw content provider
                 Uri contentUri = Uri.parse("content://com.vihangaaw.imperiooffloadmanager/cp_mac_address");
                 ContentProviderClient contentProviderClient = context.getContentResolver().acquireContentProviderClient(contentUri);
                 ContentResolver contentResolver = context.getContentResolver();
@@ -113,11 +135,11 @@ public class ReceiveBroadcast{
                         int column1Index = cursor.getColumnIndex("mac");
                         String column1Value = cursor.getString(column1Index);
                         surrogateMACAddress = column1Value;
-                        System.out.println("Surrgate MAC Address from Offload Manager: " + surrogateMACAddress);
                     } while (cursor.moveToNext());
                 }
 
-                // Get the broadcast message    
+                System.out.println("Getting broadcast message");
+
                 while (true) {
                     socket.receive(packet);
                     buffer = packet.getData();
@@ -127,6 +149,9 @@ public class ReceiveBroadcast{
                         //check whether mobile device's MAC address is in the message. If so, update surrogateAddress
                         if (surrogateMACAddress.equals(objectOutput.getString("MacAddress"))) {
                             surrogateIpAddress = objectOutput.getString("IpAddress");
+                            modelOffloaderPort = objectOutput.getInt("ModelOffloaderPort");
+                            surrogateProfilerPort = objectOutput.getInt("SurrogateProfilerPort");
+                            taskExecutorPort = objectOutput.getInt("TaskExecutorPort");
                             try {
                                 ContentValues contentValues = new ContentValues();
                                 contentValues.put("device", objectOutput.getString("DeviceName"));
@@ -144,6 +169,7 @@ public class ReceiveBroadcast{
                     }
                 }
                 socket.close();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }

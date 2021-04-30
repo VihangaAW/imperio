@@ -16,11 +16,21 @@ public class DecisionMaker {
     private int localCount = 0;
     private double offloadMAD = 0;
     private double localMAD = 0;
+    private double localTimeExecute = 0;
+    private double offloadSurrogateTimeExecute = 0;
     private ImperioSQLiteDBHelper imperioSQLiteDBHelper;
     private String taskId;
 
     public boolean isLowMemory() {
         return lowMemory;
+    }
+
+    public void setLocalTimeExecute(double localTimeExecute) {
+        this.localTimeExecute = localTimeExecute;
+    }
+
+    public void setOffloadSurrogateTimeExecute(double offloadSurrogateTimeExecute) {
+        this.offloadSurrogateTimeExecute = offloadSurrogateTimeExecute;
     }
 
     public double getAvaiableMemoryPerc() {
@@ -34,6 +44,14 @@ public class DecisionMaker {
         avaiableMemoryPerc = percentAvail;
 
         return avaiableMemoryPerc;
+    }
+
+    public double getLocalTimeExecute() {
+        return localTimeExecute;
+    }
+
+    public double getOffloadSurrogateTimeExecute() {
+        return offloadSurrogateTimeExecute;
     }
 
     public int getOffloadCount() {
@@ -55,11 +73,16 @@ public class DecisionMaker {
     public DecisionMaker(Context context, String taskId) {
         this.context = context;
         this.taskId = taskId;
-        this.lowMemory = this.IsDeviceInLowMemory();
+        this.lowMemory = this.isDeviceInLowMemory();
         this.imperioSQLiteDBHelper = new ImperioSQLiteDBHelper(this.context);
         initialization();
     }
 
+    /**
+     * Initialize decision making engine
+     *
+     * @return void
+     */
     public void initialization(){
         localCount = (imperioSQLiteDBHelper.getTaskLocal(taskId)).getCount();
         offloadCount = (imperioSQLiteDBHelper.getTaskOffload(taskId)).getCount();
@@ -71,7 +94,13 @@ public class DecisionMaker {
             offloadMAD = imperioSQLiteDBHelper.getOffloadMad((taskId));
         }
     }
-    public boolean IsDeviceInLowMemory(){
+
+    /**
+     * Check whether the device is in low memory
+     *
+     * @return boolean  returns true if the device is in low memory, otherwise false
+     */
+    public boolean isDeviceInLowMemory(){
         ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
         ActivityManager activityManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
         activityManager.getMemoryInfo(mi);
@@ -87,31 +116,26 @@ public class DecisionMaker {
         if(mi.lowMemory){
             lowMemory = true;
             return true;
-            //set to false in order to offload everytime. Original value is true
-            //lowMemory = false;
-            //return false;
         }
         else {
             lowMemory = false;
             return false;
-            //set to false in order to offload everytime. Original value is false
-            //lowMemory = true;
-            //return true;
         }
     }
 
 
-
+    /**
+     * Make decision whether to offload or execute the task locally
+     *
+     * @return int      returns 1 if the deciion is to offload, 0 for local execution
+     */
     public int makeDecision(){
-        double offloadSurrogateTimeExecute = 0;
         int didOffload = 0;
 
         if(offloadCount>0){
-            System.out.println("DECISION_MAKER_CLASS: 1: "+taskId);
             offloadSurrogateTimeExecute = imperioSQLiteDBHelper.getOffloadAverage(taskId);
         }
         System.out.println("offloadSurrogateTimeExecute: "+offloadSurrogateTimeExecute);
-        double localTimeExecute = 0;
         if(localCount>0){
             localTimeExecute = imperioSQLiteDBHelper.getLocalAverage(taskId);
         }
@@ -184,5 +208,10 @@ public class DecisionMaker {
             }
         }
         return didOffload;
+    }
+
+    public void updateDecisionMakingValues(){
+        localCount = (imperioSQLiteDBHelper.getTaskLocal(taskId)).getCount();
+        offloadCount = (imperioSQLiteDBHelper.getTaskOffload(taskId)).getCount();
     }
 }

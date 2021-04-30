@@ -37,6 +37,13 @@ public class NetworkSurrogateProfiler {
         return roundTripTime;
     }
 
+    /**
+     * Calculates Round Trip Time (RTT) and get surrogate device information
+     *
+     * @param  surrogateAddress  String IP address of the surrogate device
+     * @param  surrogatePort  int Port which is reserved for the surrogate profiler
+     * @return int      returns the status of connectivity
+     */
     public static void offload(String surrogateAddress, int surrogatePort) throws Exception{
 
         try (Socket socket = new Socket(surrogateAddress, surrogatePort)) {
@@ -50,24 +57,25 @@ public class NetworkSurrogateProfiler {
 
             int  character;
             StringBuilder data = new StringBuilder();
-
+            String strJson = "{'message':'MessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDevice" +
+                    "MessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromThe" +
+                    "MobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDevice" +
+                    "MessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromTheMobileDeviceMessageFromThe" +
+                    "MobileDeviceMessageFromTheMobileDevice1234'}";
+            JSONObject jsonObj = new JSONObject(strJson);
             while(true){
-                // Thread.sleep(100);
-                String strJson = "{'message':'Hello World from Pixel 3'}";
-                JSONObject jsonObj = new JSONObject(strJson);
-                System.out.println(jsonObj);
-                // Calculate time
+//                Thread.sleep(100);
+                //Calculate Round Trip Time
                 Instant rStart = Instant.now();
                 writer.println(jsonObj.toString());
                 while((character = reader.read()) != -1 && character != '\n')
                 {
                     data.append((char) character);
                 }
-                //Calculate time
                 Instant rEnd = Instant.now();
                 Duration rTimeElapsed = Duration.between(rStart, rEnd);
                 roundTripTime = rTimeElapsed.toMillis();
-                System.out.println(data);
+
                 if(data.length()>0){
                     JSONObject receivedJson = new JSONObject(data.toString());
                     currentCpuUsage = receivedJson.getDouble("CpuUsage");
