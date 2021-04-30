@@ -155,11 +155,11 @@ public  void  taskOffload(String  text) throws  Exception {
 		/////////////////////////////////////////////////////////////////
 		Instant  offloadStart = Instant.now();
 		//task offload
-		TokenizedInputOffload.offload(offloadStart,text,output);
+		JSONObject resultJson = OffloadManager.offload((long) decisionMaker.getLocalTimeExecute(),text);
 		/////////////////////////////////////////////////////////////////
 		// Place the code related to assign the results to variable you used to store the output
-		// Example: Category  catNegative = new  Category("negative",output[0][0]);
-		//          Category  catPositive = new  Category("positive",output[0][1]);
+		// Example: Category catNegative = new Category("negative",Float.parseFloat(resultJson.getString("negative")));
+		//          Category catPositive = new Category("positive",Float.parseFloat(resultJson.getString("positive")));
 		//          Since apiResults variable is a class variable, we need to clear all
 		//          the previous data in the list before assign new values
 		//          apiResults.clear();
@@ -168,7 +168,7 @@ public  void  taskOffload(String  text) throws  Exception {
 		/////////////////////////////////////////////////////////////////
 		Instant  offloadEnd = Instant.now();
 		Duration  offloadTimeElapsed = Duration.between(offloadStart, offloadEnd);
-		if(TokenizedInputOffload.isTaskTimeOut() || TokenizedInputOffload.isTaskHasErrors()){
+		if(OffloadManager.isTaskTimeOut() || OffloadManager.isTaskHasErrors()){
 			//Execute locally
 			taskLocallyExecute(text);
 		}
