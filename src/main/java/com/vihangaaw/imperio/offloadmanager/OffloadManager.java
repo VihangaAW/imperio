@@ -79,6 +79,8 @@ public class OffloadManager {
      */
     public static JSONObject offload(long timeoutvalue, String input) throws Exception{
         JSONArray responseJson =  new JSONArray();
+        taskTimeOut = false;
+        taskHasErrors = false;
         Callable<Integer> task = () -> {
             try {
                 int  character;
@@ -122,9 +124,13 @@ public class OffloadManager {
         {
             taskHasErrors = true;
             e.printStackTrace();
+            future.cancel(true);
         }
-        System.out.println("future done? " + future.isDone());
-        return responseJson.getJSONObject(0);
+        finally {
+            return responseJson.getJSONObject(0);
+        }
+//        System.out.println("future done? " + future.isDone());
+//        return responseJson.getJSONObject(0);
     }
 
 

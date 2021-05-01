@@ -214,4 +214,12 @@ public class DecisionMaker {
         localCount = (imperioSQLiteDBHelper.getTaskLocal(taskId)).getCount();
         offloadCount = (imperioSQLiteDBHelper.getTaskOffload(taskId)).getCount();
     }
+
+    public void updateLocalCount(){
+        localCount = localCount + 1;
+    }
+
+    public void updateOffloadCount(){
+        offloadCount = offloadCount + 1;
+    }
 }

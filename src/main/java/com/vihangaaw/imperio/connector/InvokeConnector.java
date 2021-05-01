@@ -46,6 +46,10 @@ public class InvokeConnector {
 
     private OffloadManager tokenizedInputOffload;
 
+    public int getOffloadStatus() {
+        return offloadStatus;
+    }
+
     public String getSurrogateIpAddress() {
         return surrogateIpAddress;
     }
